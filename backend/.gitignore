@@ -1,0 +1,5 @@
+.env
+hireiq.db
+uploads/
+__pycache__/
+*.pyc
