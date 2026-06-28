@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pdfplumber
+python-docx
+scikit-learn
+google-genai
+groq
+python-multipart
+pydantic-settings
+aiofiles
+python-dotenv
