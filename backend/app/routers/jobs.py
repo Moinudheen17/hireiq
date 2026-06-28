@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import os
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from app.models.db import get_db
 from app.models.database import Job, Candidate
@@ -87,11 +88,18 @@ def screen_candidates(job_id: int, db: Session = Depends(get_db)):
     if not candidates:
         raise HTTPException(status_code=400, detail="No resumes uploaded for this job")
 
-    for candidate in candidates:
+    def process_candidate(candidate):
         score = score_resume(job.description, candidate.resume_text)
         explanation = explain_score(job.description, candidate.resume_text, score)
-        candidate.score = score
-        candidate.explanation = explanation
+        return candidate.id, score, explanation
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(process_candidate, c): c for c in candidates}
+        for future in as_completed(futures):
+            candidate_id, score, explanation = future.result()
+            candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+            candidate.score = score
+            candidate.explanation = explanation
 
     job.status = "screened"
     db.commit()
